@@ -1,0 +1,110 @@
+---
+title: "Nesvi_test"
+output: html_document
+---
+test the program I wrote in the scripts 
+
+
+AML proteomics tidy up 
+
+
+```{r}
+
+source("/Users/ginny/My Drive/nesviLab_scripts/proteomics_tidyUp.R")
+source("/Users/ginny/My Drive/nesviLab_scripts/ptmSite_proteomeNormalization.R")
+
+library(biomaRt)
+library(dplyr)
+library(data.table)
+library(magrittr)
+
+
+```
+
+
+```{r}
+
+annot = fread("/Users/ginny/My Drive/CPTAC_AML/clinical/merged_prot_annot_20230410v2.tsv",
+              stringsAsFactors = F, data.table = F)
+
+
+```
+
+
+
+```{r}
+
+globalProteome_tidyUp_biomaRt(TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/AML_original_data/proteome/ratio_gene_MD.tsv",
+                              replicate_suffix_pattern = NULL,
+   output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_gene_MD_tidy_biomaRt.tsv",
+   sel_sample = NULL, 
+   sel_sample_final_name = NULL)
+
+### select only proteogenomics samples 
+
+
+globalProteome_tidyUp_biomaRt(TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/AML_original_data/proteome/ratio_gene_MD.tsv",
+                                  replicate_suffix_pattern = ".2",
+                                 sel_sample = annot$caseID,
+                              sel_sample_final_name = annot$Case_ID,
+   output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_gene_MD_tidy_biomaRt_proteogenomics.tsv")
+
+
+#### use Chenwei's file to do gencode index to gene symbol mapping 
+
+
+globalProteome_tidyUp_mapFile(TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/AML_original_data/proteome/ratio_gene_MD.tsv",
+                                                                replicate_suffix_pattern = ".2",
+                                          map_filename ="/Users/ginny/My Drive/CPTAC_AML/GENCODE.V42.basic.CHR.protein.selection.mapping.csv", 
+                                         sel_sample = annot$caseID, 
+                                         sel_sample_final_name = annot$Case_ID, 
+                                         output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_gene_MD_tidy_mapFile_proteogenomics.tsv")
+
+### need to think about dealing with duplications 
+
+
+
+
+```
+
+tidy up phospho data 
+
+also two versions 
+
+
+
+
+```{r}
+
+
+phosphoSingleSite_tidyUp_mapFile(
+  TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/AML_original_data/phosphoproteome/ratio_single-site_MD.tsv",
+  replicate_suffix_pattern = ".2",
+  map_filename ="/Users/ginny/My Drive/CPTAC_AML/GENCODE.V42.basic.CHR.protein.selection.mapping.csv",
+  sel_sample = annot$caseID,
+  sel_sample_final_name = annot$Case_ID, 
+  output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_signle-site_MD_tidy_mapFile_proteogenomics.tsv"
+ ) 
+   
+  
+
+phosphoSingleSite_tidyUp_biomaRt(
+  TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/AML_original_data/phosphoproteome/ratio_single-site_MD.tsv",
+  replicate_suffix_pattern = ".2",
+  sel_sample = annot$caseID,
+  sel_sample_final_name = annot$Case_ID, 
+  output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_signle-site_MD_tidy_biomaRt_proteogenomics.tsv"
+ ) 
+   
+```
+
+
+normalization
+
+
+```{r}
+ptmSite_proteomeNormalization(tidy_phospho_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_signle-site_MD_tidy_mapFile_proteogenomics.tsv",
+                              tidy_proteome_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_gene_MD_tidy_mapFile_proteogenomics.tsv",
+                              output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/normalized_phospho_single-site_MD_tidy_mapFile_proteogenomics.tsv")
+```
+
