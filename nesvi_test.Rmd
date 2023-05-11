@@ -9,26 +9,71 @@ AML proteomics tidy up
 
 
 ```{r}
-
+source("/Users/ginny/My Drive/nesviLab_scripts/proteomics_QC.R")
 source("/Users/ginny/My Drive/nesviLab_scripts/proteomics_tidyUp.R")
 source("/Users/ginny/My Drive/nesviLab_scripts/ptmSite_proteomeNormalization.R")
+source("/Users/ginny/My Drive/nesviLab_scripts/limma_DE_ebayes_functions.R")
 
 library(biomaRt)
 library(dplyr)
 library(data.table)
 library(magrittr)
-
+library(ggplot2)
+library(factoextra)
+library(cowplot)
+library(gridExtra)
+library(GGally)
 
 ```
+
+QC
 
 
 ```{r}
 
-annot = fread("/Users/ginny/My Drive/CPTAC_AML/clinical/merged_prot_annot_20230410v2.tsv",
-              stringsAsFactors = F, data.table = F)
+
+proteomic_annot = fread("/Users/ginny/My Drive/CPTAC_AML/proteomic_annot.tsv", 
+                        stringsAsFactors = F, data.table = F)
+
+proteome_data = fread("/Users/ginny/My Drive/nesviLab_scripts/AML_original_data/proteome/ratio_gene_MD.tsv",
+                  stringsAsFactors = F, data.table = F)
 
 
+bar_number(  prot_data = proteome_data,
+  prot_annot = proteomic_annot,
+  tag = "Number of quantified genes",
+  pdf_name = "/Users/ginny/My Drive/nesviLab_scripts/test_output/aml_raw_proteome_gene_number_plex.pdf")
+
+interest_samples = intersect(proteomic_annot$caseID, colnames(proteome_data))
+
+
+get_density(
+  prot_data  = proteome_data[, interest_samples],
+  tag = "Proteome gene",
+  pdf_output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/aml_raw_proteome_density.pdf"
+ )
+  
+
+plex_pca_fviz_area( prot_data =  proteome_data,
+  prot_annot = proteomic_annot,
+  pdf_name = "/Users/ginny/My Drive/nesviLab_scripts/test_output/aml_proteome_ratio_gene_plex_pca.pdf",
+  xmina = 20,
+  xmaxa = 20,
+  ymina = 20,
+  ymaxa = 10)
+
+
+generate_cor_plot(  prot_data = proteome_data,
+  prot_annot = proteomic_annot,
+  pdf_name = "/Users/ginny/My Drive/nesviLab_scripts/test_output/aml_raw_proteome_gene_rep_cor.pdf",
+  tag = "Proteome gene reps cor")
+
+ 
 ```
+
+
+
+
 
 
 
@@ -107,4 +152,90 @@ ptmSite_proteomeNormalization(tidy_phospho_filename = "/Users/ginny/My Drive/nes
                               tidy_proteome_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_gene_MD_tidy_mapFile_proteogenomics.tsv",
                               output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/normalized_phospho_single-site_MD_tidy_mapFile_proteogenomics.tsv")
 ```
+
+
+
+try with ccRCC + non ccRCC data
+
+
+```{r}
+
+annot = fread("/Users/ginny/My Drive/nonCCRCC20211020/clinical/col_annot_meta_20220526_wgii.tsv", 
+              stringsAsFactors = F, data.table = F)
+
+
+# 
+# globalProteome_tidyUp_mapFile(TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/ncc_original_data/proteome/abundance_gene_MD.tsv",
+#                                                                 replicate_suffix_pattern = ".2",
+#                                           map_filename ="/Users/ginny/My Drive/CPTAC_AML/GENCODE.V42.basic.CHR.protein.selection.mapping.csv", 
+#                                          sel_sample = annot$sample_id,
+#                                          sel_sample_final_name = annot$caseID, 
+#                                          output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ncc_abundance_gene_MD_tidy_mapFiile.tsv")
+
+
+
+
+globalProteome_tidyUp_mapFile(TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/ncc_original_data/proteome/ratio_gene_MD.tsv",
+                                                                replicate_suffix_pattern = ".2",
+                                          map_filename ="/Users/ginny/My Drive/CPTAC_AML/GENCODE.V42.basic.CHR.protein.selection.mapping.csv", 
+                                         sel_sample = annot$sample_id,
+                                         sel_sample_final_name = annot$caseID, 
+                                         output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output2/ncc_ratio_gene_MD_tidy_mapFile.tsv")
+
+
+
+```
+
+phospho ratio data 
+
+
+```{r}
+
+
+
+phosphoSingleSite_tidyUp_mapFile(
+  TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/ncc_original_data/phosphoproteome/ratio_single-site_MD.tsv",
+  replicate_suffix_pattern = ".2",
+  map_filename ="/Users/ginny/My Drive/CPTAC_AML/GENCODE.V42.basic.CHR.protein.selection.mapping.csv",
+  sel_sample = annot$sample_id,
+  sel_sample_final_name = annot$caseID, 
+  output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output2/ncc_ratio_signle-site_MD_tidy_mapFile.tsv"
+ ) 
+   
+  
+
+```
+
+normalize 
+
+```{r}
+
+ptmSite_proteomeNormalization(tidy_phospho_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output2/ncc_ratio_signle-site_MD_tidy_mapFile.tsv",
+                              tidy_proteome_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output2/ncc_ratio_gene_MD_tidy_mapFiile.tsv",
+                              output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output2/ncc_normalized_phospho_single-site_MD_tidy_mapFile.tsv")
+
+
+```
+
+
+DE
+
+```{r}
+
+ncc_annot = fread("/Users/ginny/My Drive/nonCCRCC20211020/clinical/col_annot_meta_20220526_wgii.tsv", 
+              stringsAsFactors = F, data.table = F)
+
+
+limma_de_table(interest_sample1 = "wgii_high_nccRCC", 
+                         interest_sample2 = "wgii_low_nccRCC",
+                         interest_sample1_invert = F, 
+                         interest_sample2_invert  = F, 
+                         data_table_file = "/Users/ginny/My Drive/nesviLab_scripts/test_output2/ncc_ratio_gene_MD_tidy_mapFile.tsv", 
+                         col_annot_file = "/Users/ginny/My Drive/nonCCRCC20211020/clinical/col_annot_meta_20220526_wgii.tsv",
+                         adjust_purity = T,
+                         table_output_file = "/Users/ginny/My Drive/nesviLab_scripts/test_output2/ncc_ratio_gene_MD_DE_high_low_wgii.tsv")
+  
+```
+
+
 

@@ -10,19 +10,47 @@ globalProteome_tidyUp_biomaRt = function(TMTI_input_filename,
                                          sel_sample_final_name, 
                                 output_filename)
 {
+  # 
+  # TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/ncc_original_data/proteome/abundance_gene_MD.tsv"
+  # replicate_suffix_pattern = ".2"
+  # sel_sample = annot$sample_id
+  # sel_sample_final_name = annot$caseID
+  # output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ncc_abundance_gene_MD_tidy_biomaRt.tsv"
   
-  
-#TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/AML_original_data/proteome/ratio_gene_MD.tsv"
-  
-  
+
 prot = fread(TMTI_input_filename,
-               stringsAsFactors = F, data.table = F)
+               stringsAsFactors = F, data.table = F, check.names = F)
+
+tff = as.data.frame(table(colnames(prot)))%>%
+  dplyr::arrange(desc(Freq))%>%
+  dplyr::filter(Freq>1)
+
+if(nrow(tff)>0)  #### make sure we have unique column names now 
+{
+  for(x in 1:nrow(tff))
+  {
+    ns = which(colnames(prot) == tff$Var1[x])
+    
+    ns_suffix = c(1:length(ns))
+    
+    new_ns = paste0(colnames(prot)[ns], ".",ns_suffix)
+    new_ns[1] = colnames(prot)[ns[1]]
+    
+    colnames(prot)[ns] = new_ns
+    
+  }
+  
+}
+
 
 #replicate_suffix_pattern = c(".2")
 if(length(replicate_suffix_pattern)>0)
 {
   
+  
+  
 sp = paste0("\\",replicate_suffix_pattern, "$")
+sp = paste(sp, collapse = "|")
 
 rep_col = grep(sp, colnames(prot), value = T)
 ori_col = gsub(sp, "", rep_col)
@@ -51,6 +79,7 @@ colnames(av_rep) = ori_col
 
 non_rep_col = setdiff(colnames(prot), cols_to_remove)
 prot = cbind(prot[, non_rep_col], av_rep)
+
 }
 
   
@@ -111,20 +140,49 @@ globalProteome_tidyUp_mapFile = function(TMTI_input_filename,
                                          sel_sample_final_name, 
                                          output_filename)
 {
-  
-  # TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/AML_original_data/proteome/ratio_gene_MD.tsv"
+  # 
+  # 
+  # TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/ncc_original_data/proteome/abundance_gene_MD.tsv"
+  # replicate_suffix_pattern = ".2"
   # map_filename ="/Users/ginny/My Drive/CPTAC_AML/GENCODE.V42.basic.CHR.protein.selection.mapping.csv"
-  # sel_sample = annot$caseID
-  # sel_sample_final_name = annot$Case_ID 
-  # output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_gene_MD_tidy_mapFile_proteogenomics.tsv"
+  # sel_sample = annot$sample_id
+  # sel_sample_final_name = annot$caseID
+  # output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ncc_abundance_gene_MD_tidy_mapFiile.tsv"
   # 
   
   prot = fread(TMTI_input_filename,
-               stringsAsFactors = F, data.table = F)
-  if(length(replicate_suffix_pattern)>0)
-  {
-  sp = paste0("\\",replicate_suffix_pattern, "$")
+               stringsAsFactors = F, data.table = F, check.names = F)
   
+  tff = as.data.frame(table(colnames(prot)))%>%
+    dplyr::arrange(desc(Freq))%>%
+    dplyr::filter(Freq>1)
+  
+  if(nrow(tff)>0)  #### make sure we have unique column names now 
+  {
+    for(x in 1:nrow(tff))
+    {
+      ns = which(colnames(prot) == tff$Var1[x])
+      
+      ns_suffix = c(1:length(ns))
+      
+      new_ns = paste0(colnames(prot)[ns], ".",ns_suffix)
+      new_ns[1] = colnames(prot)[ns[1]]
+      
+      colnames(prot)[ns] = new_ns
+      
+    }
+    
+  }
+  
+  
+  
+  
+    if(length(replicate_suffix_pattern)>0)
+  {
+      
+      sp = paste0("\\",replicate_suffix_pattern, "$")
+      sp = paste(sp, collapse = "|")
+      
   rep_col = grep(sp, colnames(prot), value = T)
   ori_col = gsub(sp, "", rep_col)
   
@@ -160,8 +218,11 @@ globalProteome_tidyUp_mapFile = function(TMTI_input_filename,
                stringsAsFactors = F, data.table = F)%>%
     dplyr::select(Gene_id, Gene_name)%>%
     unique()
+ 
+  gid = gsub("\\..*", "", prot$Index) 
   
   prot_tidy = prot%>%
+    dplyr::mutate(Index = gid)%>%
     dplyr::left_join(gmap, by = c("Index" = "Gene_id"))%>%
     dplyr::select(Gene_name, everything())%>%
     dplyr::select(-Index)%>%
@@ -206,18 +267,37 @@ phosphoSingleSite_tidyUp_biomaRt = function(TMTI_input_filename,
                                                 output_filename)
 {
   
-  # TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/AML_original_data/phosphoproteome/ratio_single-site_MD.tsv"
-  # map_filename ="/Users/ginny/My Drive/CPTAC_AML/GENCODE.V42.basic.CHR.protein.selection.mapping.csv"
-  # sel_sample = annot$caseID
-  # sel_sample_final_name = annot$Case_ID 
-  # output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_signle-site_MD_tidy_mapFile_proteogenomics.tsv"
-  # 
-  
+   
   phospho = fread(TMTI_input_filename,
                   stringsAsFactors = F, data.table = F)
+  
+  
+  tff = as.data.frame(table(colnames(phospho)))%>%
+    dplyr::arrange(desc(Freq))%>%
+    dplyr::filter(Freq>1)
+  
+  if(nrow(tff)>0)  #### make sure we have unique column names now 
+  {
+    for(x in 1:nrow(tff))
+    {
+      ns = which(colnames(phospho) == tff$Var1[x])
+      
+      ns_suffix = c(1:length(ns))
+      
+      new_ns = paste0(colnames(phospho)[ns], ".",ns_suffix)
+      new_ns[1] = colnames(phospho)[ns[1]]
+      
+      colnames(phospho)[ns] = new_ns
+      
+    }
+    
+  }
+    
+
   if(length(replicate_suffix_pattern)>0)
   {
   sp = paste0("\\",replicate_suffix_pattern, "$")
+  sp = paste(sp, collapse = "|")
   
   rep_col = grep(sp, colnames(phospho), value = T)
   ori_col = gsub(sp, "", rep_col)
@@ -318,19 +398,37 @@ phosphoSingleSite_tidyUp_mapFile = function(TMTI_input_filename,
                                          output_filename)
 {
   
-  # TMTI_input_filename = "/Users/ginny/My Drive/nesviLab_scripts/AML_original_data/phosphoproteome/ratio_single-site_MD.tsv"
-  # map_filename ="/Users/ginny/My Drive/CPTAC_AML/GENCODE.V42.basic.CHR.protein.selection.mapping.csv"
-  # sel_sample = annot$caseID
-  # sel_sample_final_name = annot$Case_ID 
-  # output_filename = "/Users/ginny/My Drive/nesviLab_scripts/test_output/ratio_signle-site_MD_tidy_mapFile_proteogenomics.tsv"
-  # 
+  
+  
   
   phospho = fread(TMTI_input_filename,
                stringsAsFactors = F, data.table = F)
   
+  tff = as.data.frame(table(colnames(phospho)))%>%
+    dplyr::arrange(desc(Freq))%>%
+    dplyr::filter(Freq>1)
+  
+  if(nrow(tff)>0)  #### make sure we have unique column names now 
+  {
+    for(x in 1:nrow(tff))
+    {
+      ns = which(colnames(phospho) == tff$Var1[x])
+      
+      ns_suffix = c(1:length(ns))
+      
+      new_ns = paste0(colnames(phospho)[ns], ".",ns_suffix)
+      new_ns[1] = colnames(phospho)[ns[1]]
+      
+      colnames(phospho)[ns] = new_ns
+      
+    }
+    
+  }
+  
   if(length(replicate_suffix_pattern)>0)
   {
   sp = paste0("\\",replicate_suffix_pattern, "$")
+  sp = paste(sp, collapse = "|")
   
   rep_col = grep(sp, colnames(phospho), value = T)
   ori_col = gsub(sp, "", rep_col)
@@ -369,7 +467,10 @@ phosphoSingleSite_tidyUp_mapFile = function(TMTI_input_filename,
     unique()
   
   
+  gid = gsub("\\..*", "", phospho$Gene)
+  
  phospho_tidy = phospho%>%
+   dplyr::mutate(Gene = gid)%>%
     dplyr::left_join(gmap, by = c("Gene" = "Gene_id"))%>%
     dplyr::mutate(site = gsub(".*_","",Index))%>%
     dplyr::mutate(geneSite = paste(Gene_name, site, sep = "_"))%>%

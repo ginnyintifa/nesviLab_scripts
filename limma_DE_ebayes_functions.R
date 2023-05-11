@@ -124,8 +124,18 @@ limma_de_table= function(interest_sample1,
                          table_output_file)
   
 {
-  
   # 
+  # interest_sample1 = "wgii_high_nccRCC"
+  # interest_sample2 = "wgii_low_nccRCC"
+  # interest_sample1_invert = F
+  # interest_sample2_invert  = F
+  # data_table_file = "/Users/ginny/My Drive/nesviLab_scripts/test_output2/ncc_ratio_gene_MD_tidy_mapFile.tsv"
+  # col_annot_file = "/Users/ginny/My Drive/nonCCRCC20211020/clinical/col_annot_meta_20220526_wgii.tsv"
+  # adjust_purity = T
+  # table_output_file = "/Users/ginny/My Drive/nesviLab_scripts/test_output2/ncc_ratio_gene_MD_DE_high_low_wgii.tsv"
+  # 
+  
+  
   # 
   data_table = fread(data_table_file, stringsAsFactors = F, data.table = F)
   
@@ -217,8 +227,12 @@ limma_de_table= function(interest_sample1,
     
     
     td = data_table[, channels]
+    gg = data_table$Gene_name
+    gg[which(is.na(gg))] = "NA"
     
-    rownames(td) = data_table[,1]
+    rownames(td) = gg
+
+    
     
     m1 = rowMeans(td[, s1_ID], na.rm = T)
     m1[is.nan(m1)] = NA
